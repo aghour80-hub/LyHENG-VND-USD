@@ -1,0 +1,125 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/errors/app_exception.dart';
+import '../services/supabase_service.dart';
+
+class AuthState {
+  final bool isAuthenticated;
+  final bool isAuthorizedAdmin;
+  final String? userEmail;
+  final String? userId;
+  final String? errorMessage;
+  final bool isLoading;
+
+  const AuthState({
+    this.isAuthenticated = false,
+    this.isAuthorizedAdmin = false,
+    this.userEmail,
+    this.userId,
+    this.errorMessage,
+    this.isLoading = false,
+  });
+
+  AuthState copyWith({
+    bool? isAuthenticated,
+    bool? isAuthorizedAdmin,
+    String? userEmail,
+    String? userId,
+    String? errorMessage,
+    bool? isLoading,
+  }) {
+    return AuthState(
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      isAuthorizedAdmin: isAuthorizedAdmin ?? this.isAuthorizedAdmin,
+      userEmail: userEmail ?? this.userEmail,
+      userId: userId ?? this.userId,
+      errorMessage: errorMessage,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
+final authRepositoryProvider = NotifierProvider<AuthRepository, AuthState>(AuthRepository.new);
+
+class AuthRepository extends Notifier<AuthState> {
+  final SupabaseService? _injectedService;
+
+  AuthRepository([this._injectedService]);
+
+  SupabaseService get _supabaseService => _injectedService ?? SupabaseService.instance;
+
+  @override
+  AuthState build() {
+    _checkInitialAuth();
+    return const AuthState();
+  }
+
+  Future<void> _checkInitialAuth() async {
+    if (!_supabaseService.isConfigured) return;
+
+    final user = _supabaseService.currentAuthUser;
+    if (user != null) {
+      state = state.copyWith(isLoading: true);
+      final isAuthorized = await _supabaseService.verifyAdminStatus(user.id);
+      if (isAuthorized) {
+        state = AuthState(
+          isAuthenticated: true,
+          isAuthorizedAdmin: true,
+          userId: user.id,
+          userEmail: user.email,
+        );
+      } else {
+        await _supabaseService.signOut();
+        state = const AuthState();
+      }
+    }
+  }
+
+  Future<bool> signIn({
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      final response = await _supabaseService.signInWithEmailPassword(
+        email: email.trim(),
+        password: password,
+      );
+
+      final user = response.user;
+      if (user == null) {
+        throw const AuthExceptionApp('Authentication failed: No user returned.');
+      }
+
+      // Check Admin Authorization via database function
+      final isAuthorized = await _supabaseService.verifyAdminStatus(user.id);
+      if (!isAuthorized) {
+        await _supabaseService.signOut();
+        throw const UnauthorizedException(
+          'Access denied. This account does not have Admin authorization in admin_users.',
+        );
+      }
+
+      state = AuthState(
+        isAuthenticated: true,
+        isAuthorizedAdmin: true,
+        userId: user.id,
+        userEmail: user.email,
+        isLoading: false,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e is AppException ? e.message : e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<void> signOut() async {
+    state = state.copyWith(isLoading: true);
+    await _supabaseService.signOut();
+    state = const AuthState();
+  }
+}

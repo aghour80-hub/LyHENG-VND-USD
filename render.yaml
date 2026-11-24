@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: lyheng-vnd-usd
+    runtime: static
+    buildCommand: chmod +x ./scripts/render-build.sh && ./scripts/render-build.sh
+    staticPublishPath: ./build/web
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
