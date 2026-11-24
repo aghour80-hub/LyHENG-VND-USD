@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class CustomKeypad extends StatelessWidget {
@@ -6,6 +7,7 @@ class CustomKeypad extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onClear;
   final bool showDecimal;
+  final double buttonHeight;
 
   const CustomKeypad({
     super.key,
@@ -13,6 +15,7 @@ class CustomKeypad extends StatelessWidget {
     required this.onDelete,
     required this.onClear,
     this.showDecimal = true,
+    this.buttonHeight = 52.0,
   });
 
   @override
@@ -31,6 +34,7 @@ class CustomKeypad extends StatelessWidget {
             Expanded(
               child: _KeypadButton(
                 text: showDecimal ? '.' : '00',
+                buttonHeight: buttonHeight,
                 onTap: () => onKeyPress(showDecimal ? '.' : '00'),
               ),
             ),
@@ -38,6 +42,7 @@ class CustomKeypad extends StatelessWidget {
             Expanded(
               child: _KeypadButton(
                 text: '0',
+                buttonHeight: buttonHeight,
                 onTap: () => onKeyPress('0'),
               ),
             ),
@@ -45,9 +50,10 @@ class CustomKeypad extends StatelessWidget {
             Expanded(
               child: _KeypadButton(
                 icon: Icons.backspace_outlined,
+                buttonHeight: buttonHeight,
                 onTap: onDelete,
                 onLongPress: onClear,
-                backgroundColor: AppColors.sellRateRedLight.withValues(alpha: 0.4),
+                backgroundColor: AppColors.sellRateRedLight.withValues(alpha: 0.5),
                 iconColor: AppColors.sellRateRed,
               ),
             ),
@@ -65,6 +71,7 @@ class CustomKeypad extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: _KeypadButton(
               text: key,
+              buttonHeight: buttonHeight,
               onTap: () => onKeyPress(key),
             ),
           ),
@@ -81,6 +88,7 @@ class _KeypadButton extends StatelessWidget {
   final VoidCallback? onLongPress;
   final Color? backgroundColor;
   final Color? iconColor;
+  final double buttonHeight;
 
   const _KeypadButton({
     this.text,
@@ -89,6 +97,7 @@ class _KeypadButton extends StatelessWidget {
     this.onLongPress,
     this.backgroundColor,
     this.iconColor,
+    this.buttonHeight = 52.0,
   });
 
   @override
@@ -99,23 +108,33 @@ class _KeypadButton extends StatelessWidget {
 
     return Material(
       color: backgroundColor ?? defaultBg,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
+      elevation: isDark ? 0 : 0.5,
+      shadowColor: Colors.black12,
       child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        onLongPress: onLongPress != null
+            ? () {
+                HapticFeedback.mediumImpact();
+                onLongPress!();
+              }
+            : null,
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          height: 52,
+          height: buttonHeight,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
               width: 1,
             ),
           ),
           child: icon != null
-              ? Icon(icon, size: 22, color: iconColor ?? textColor)
+              ? Icon(icon, size: 24, color: iconColor ?? textColor)
               : Text(
                   text ?? '',
                   style: TextStyle(
