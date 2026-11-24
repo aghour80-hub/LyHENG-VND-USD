@@ -80,6 +80,28 @@ class AuthRepository extends Notifier<AuthState> {
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
+    // Local / Demo mode fallback when Supabase is not configured
+    if (!_supabaseService.isConfigured) {
+      final normalizedEmail = email.trim().toLowerCase();
+      if ((normalizedEmail == 'lyheng@lyheng.com' || normalizedEmail == 'lyheng') &&
+          password == 'Lyheng168') {
+        state = const AuthState(
+          isAuthenticated: true,
+          isAuthorizedAdmin: true,
+          userId: 'lyheng-demo-admin-uuid',
+          userEmail: 'lyheng@lyheng.com',
+          isLoading: false,
+        );
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Tên đăng nhập hoặc mật khẩu quản trị không chính xác.',
+        );
+        return false;
+      }
+    }
+
     try {
       final response = await _supabaseService.signInWithEmailPassword(
         email: email.trim(),

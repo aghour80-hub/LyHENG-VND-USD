@@ -32,9 +32,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final rawInput = _emailController.text.trim();
+    final normalizedEmail = rawInput == 'lyheng' ? 'lyheng@lyheng.com' : rawInput;
+
     final authRepo = ref.read(authRepositoryProvider.notifier);
     final success = await authRepo.signIn(
-      email: _emailController.text.trim(),
+      email: normalizedEmail,
       password: _passwordController.text,
     );
 
@@ -129,7 +132,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             if (value == null || value.trim().isEmpty) {
                               return 'Vui lòng nhập email';
                             }
-                            if (!value.contains('@')) {
+                            final trimmed = value.trim();
+                            if (trimmed != 'lyheng' && !trimmed.contains('@')) {
                               return 'Email không hợp lệ';
                             }
                             return null;

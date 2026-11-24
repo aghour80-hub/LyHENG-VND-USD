@@ -113,9 +113,25 @@ class ExchangeRateRepository {
     required Decimal sellRate,
   }) async {
     if (!supabaseService.isConfigured) {
-      throw const DatabaseExceptionApp(
-        'Cannot publish rates: Backend credentials are not configured in config/dev.json.',
+      // Demo/local publish mode for immediate UI preview when backend is not hooked up
+      final newVersion = _currentRate.version + 1;
+      final localUpdated = ExchangeRate(
+        id: 'local-rate-$newVersion',
+        buyRate: buyRate,
+        sellRate: sellRate,
+        currencyBase: 'USD',
+        currencyQuote: 'VND',
+        version: newVersion,
+        updatedAt: DateTime.now(),
+        isActive: true,
+        isDemo: true,
       );
+      _currentRate = localUpdated;
+      _lastSyncTime = DateTime.now();
+      await localDb.saveActiveRate(localUpdated);
+      await PreferencesService.setLastSyncTimestamp(_lastSyncTime!);
+      _activeRateController.add(localUpdated);
+      return localUpdated;
     }
 
     final published = await supabaseService.publishRate(
