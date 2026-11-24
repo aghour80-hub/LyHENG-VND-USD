@@ -33,7 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final rawInput = _emailController.text.trim();
-    final normalizedEmail = rawInput == 'lyheng' ? 'lyheng@lyheng.com' : rawInput;
+    final normalizedEmail = rawInput.toLowerCase() == 'lyheng' ? 'lyheng@lyheng.com' : rawInput;
 
     final authRepo = ref.read(authRepositoryProvider.notifier);
     final success = await authRepo.signIn(
@@ -132,7 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             if (value == null || value.trim().isEmpty) {
                               return 'Vui lòng nhập email';
                             }
-                            final trimmed = value.trim();
+                            final trimmed = value.trim().toLowerCase();
                             if (trimmed != 'lyheng' && !trimmed.contains('@')) {
                               return 'Email không hợp lệ';
                             }

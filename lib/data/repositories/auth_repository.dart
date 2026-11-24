@@ -83,8 +83,9 @@ class AuthRepository extends Notifier<AuthState> {
     // Local / Demo mode fallback when Supabase is not configured
     if (!_supabaseService.isConfigured) {
       final normalizedEmail = email.trim().toLowerCase();
+      final normalizedPassword = password.trim();
       if ((normalizedEmail == 'lyheng@lyheng.com' || normalizedEmail == 'lyheng') &&
-          password == 'Lyheng168') {
+          (normalizedPassword == 'Lyheng168' || normalizedPassword == 'lyheng168')) {
         state = const AuthState(
           isAuthenticated: true,
           isAuthorizedAdmin: true,
